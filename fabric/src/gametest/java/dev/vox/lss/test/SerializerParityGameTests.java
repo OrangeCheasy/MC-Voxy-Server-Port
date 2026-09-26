@@ -79,13 +79,15 @@ public class SerializerParityGameTests {
     private static net.minecraft.server.level.ServerPlayer placeMockServerPlayer(GameTestHelper helper) {
         return helper.makeMockServerPlayerInLevel();
     }
-    // End void: between the main island (~chunk 22) and the outer islands (chunk 64+) the island
-    // density function contributes nothing (max |chunk/2 + 12|^2 sum < 4096), so chunks there are
-    // guaranteed all-air in every vanilla seed. The disk-read test may use a fixed position
-    // because it never modifies blocks (the gametest world PERSISTS across runs — block-writing
-    // tests must derive per-run positions instead, see the sentinel test).
-    private static final int END_VOID_DISK_CX = 44;
-    private static final int END_VOID_DISK_CZ = 8;
+    // Minecraft 26.3 moved the main-island contribution out of end_outer_islands and into
+    // the data-driven end/islands density function. The pre-26.3 (~chunk 22) guarantee used by
+    // these tests is therefore obsolete. Keep fixtures in the remaining vanilla void gap:
+    // comfortably outside the new central-island contribution, but inside the outer-island
+    // band that begins around 1000 blocks from the origin. The disk-read test may use a fixed
+    // position because it never modifies blocks (the gametest world PERSISTS across runs —
+    // block-writing tests must derive per-run positions instead, see the sentinel test).
+    private static final int END_VOID_DISK_CX = 56;
+    private static final int END_VOID_DISK_CZ = 0;
 
     /**
      * R2-5's production range gate feeds {@code level.getMinSectionY()}/{@code getMaxSectionY()}
@@ -510,14 +512,14 @@ public class SerializerParityGameTests {
         helper.assertTrue(endLevel != null, "the End dimension must exist on the gametest server");
         var dim = LSSConstants.DIM_STR_THE_END;
 
-        // This test builds a block, and the gametest world persists across runs — so derive the
-        // chunk from the per-run random batch position (cx 28..43, cz -16..-9: inside the void
-        // guarantee band, disjoint from the disk-read test's chunk) and scan down-z past any
-        // column a previous run already built in.
+        // This test builds a block, and the gametest world persists across runs — derive the
+        // chunk from the per-run random batch position. Minecraft 26.3's rewritten End density
+        // moved the old void boundary, so stay in the new central-to-outer-island gap and scan
+        // down-z past any column a previous run already built in.
         var origin = chunkAt(helper.absolutePos(BlockPos.ZERO));
         int salt = Math.floorMod(origin.x() * 31 + origin.z(), 256);
-        int cx = 28 + (salt & 15);
-        int baseCz = -16 + ((salt >> 4) & 7);
+        int cx = 52 + (salt & 7);
+        int baseCz = -4 + ((salt >> 4) & 7);
         int cz = baseCz;
         var chunk = endLevel.getChunk(cx, cz);
         for (int remaining = 8; remaining > 0
@@ -805,15 +807,10 @@ public class SerializerParityGameTests {
                     state.flushSendQueue(1_073_741_824L, limiter, flushDiag, p -> {});
                     helper.assertTrue(state.getTotalSectionsSent() == 1,
                             "waiting for the built column to serve and flush");
-                    // The column becomes all-air: strip every superflat layer.
-                    for (int x = 0; x < 16; x++) {
-                        for (int z = 0; z < 16; z++) {
-                            for (int y = -64; y <= -61; y++) {
-                                level.setBlock(new BlockPos(cx * 16 + x, y, cz * 16 + z),
-                                        Blocks.AIR.defaultBlockState(), 3);
-                            }
-                        }
-                    }
+                    // The column becomes all-air. Do not encode the flat preset's layer
+                    // coordinates here: 26.3 changed worldgen internals, and this regression test
+                    // is about the LSS transition semantics, not the fixture preset's exact shape.
+                    clearColumnToAir(level, cx, cz);
                     // Queue the completed mutation's invalidation before capturing a fresh probe.
                     proc.invalidateTimestamps(dim, new long[]{packed});
                     proc.clearDiskReadDone(uuid, new long[]{packed});
@@ -861,6 +858,33 @@ public class SerializerParityGameTests {
                 default -> helper.fail("unexpected all-air transition step " + step.get());
             }
         });
+    }
+
+    /**
+     * Clear every real block currently present in a loaded fixture column while preserving the
+     * normal Level#setBlock update path. This keeps all-air transition tests independent of the
+     * exact flat-world layer layout and of any structure content that happens to occupy the
+     * chosen chunk.
+     */
+    private static void clearColumnToAir(ServerLevel level, int cx, int cz) {
+        var chunk = level.getChunk(cx, cz);
+        var sections = chunk.getSections();
+        int minSectionY = level.getMinSectionY();
+        for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+            var section = sections[sectionIndex];
+            if (section == null || section.hasOnlyAir()) continue;
+            int baseY = (minSectionY + sectionIndex) << 4;
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        if (!section.getBlockState(x, y, z).isAir()) {
+                            level.setBlock(new BlockPos(cx * 16 + x, baseY + y, cz * 16 + z),
+                                    Blocks.AIR.defaultBlockState(), 3);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static String describeMismatch(byte[] disk, byte[] live) {
