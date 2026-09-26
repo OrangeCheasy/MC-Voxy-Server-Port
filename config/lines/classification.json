@@ -11,14 +11,14 @@
     ".github/line.env": {
       "axes": "Exact file flavor; residual shared logic is not normalized or exempted.",
       "kind": "adapted",
-      "review": "Implementation candidate; independent final change review must cover residual logic before handoff.",
+      "review": "Minecraft 26.3 line metadata reviewed for Fabric/Paper/NeoForge targets, Java 25, and NeoForge beta shipping validation.",
       "reviewed_blobs": {
         "1.21.1": "2e69831ab34edf82b8b5604e091953d0966e8f27",
         "1.21.10": "89f38d1a9468befd988d5364102804d36dd92391",
         "1.21.11": "13f1f4c63fc0d381a30b4461eccac38c989e74c7",
         "26.1": "321c91f65424d5e550f96ac19d7a7801ad491966",
         "26.2": "4e48d5068f8c3b2ee1d7eab85be6b11556b557b4",
-        "26.3": "99cae6db7ccf2b1735b430aa07f89334c29c714d"
+        "26.3": "0a588356b730b5cb8eee7342cda803c70a6f4af1"
       },
       "surface": "line-adaptation:.github/line.env",
       "tests": [
@@ -735,14 +735,14 @@
     "config/compatibility/line.json": {
       "axes": "Exact file flavor; residual shared logic is not normalized or exempted.",
       "kind": "adapted",
-      "review": "Nonnumeric metadata delta reviewed: 1.21.10, 1.21.11 and 26.1 declare the existing enabled Fabric client gametest task; all other data unchanged. Independent final change review remains pending.",
+      "review": "Minecraft 26.3 authored facts reviewed against .github/line.env and current build definitions; NeoForge beta shipping is enabled while renderer capability remains independently unsupported.",
       "reviewed_blobs": {
         "1.21.1": "48ffbbc4b89652a59ba2e5332f5c4c008409dcdd",
         "1.21.10": "08c3ecc92e34610fd7903cf2e8ebd46399c6ac48",
         "1.21.11": "64297ee249002ddda637de26bc726a09acc88403",
         "26.1": "c06a9b11eafde13756baa8173a35efed01485095",
         "26.2": "c862d2466688b66b38050990b09d392db994f827",
-        "26.3": "07bfd223052b6b2043f8831afcdd98b6dea6ad0a"
+        "26.3": "4361c5b77f56ff0b07d3e41aa1b6d93227dd2d41"
       },
       "surface": "line-adaptation:config/compatibility/line.json",
       "tests": [
@@ -4650,14 +4650,14 @@
     "gradle.properties": {
       "axes": "Exact file flavor; residual shared logic is not normalized or exempted.",
       "kind": "adapted",
-      "review": "v0.15.1 PR parity audit: current per-world implementation and later settings/preset changes reviewed against 26.2; only documented Minecraft API/loader seams retained. Exact-version builds and behavior gates are recorded with the release.",
+      "review": "Minecraft 26.3 build pins reviewed: Fabric 0.161.0+26.3 / Loader 0.19.5 / Loom 1.17.21 retained; NeoForge advanced to 26.3.0.7-beta.",
       "reviewed_blobs": {
         "1.21.1": "77edecd284d176d13b073540e3a61d02f37c1358",
         "1.21.10": "676e43c419ead754907340c607ec8cc8d583f656",
         "1.21.11": "b3584a9bf76412ff2637ded57ccdb13340ad2235",
         "26.1": "89f1771711e62301c25d4396c9107ea02316b430",
         "26.2": "8b7b2387634689df8049ca069e95fc9b2cb594d3",
-        "26.3": "9b3792ed4a61ebd8453ac0b73adcc6c9b5c6f4bb"
+        "26.3": "1b7a2febb5fcd34cebedff6bcd5264033ad24089"
       },
       "surface": "build-toolchain",
       "tests": [
@@ -4725,14 +4725,14 @@
     "neoforge/build.gradle": {
       "axes": "Exact file flavor; residual shared logic is not normalized or exempted.",
       "kind": "adapted",
-      "review": "Implementation candidate; independent final change review must cover residual logic before handoff.",
+      "review": "Minecraft 26.3 NeoForge toolchain reviewed: ModDevGradle 2.0.147 and descriptor iconFile branding rewrite; no gameplay behavior changes.",
       "reviewed_blobs": {
         "1.21.1": "ff0099a4ca6887693f0bd19a56172e4f9e36871d",
         "1.21.10": "f294e80bdd5727bc9f86cd111b98e7a2306ca773",
         "1.21.11": "24a6311f36e6da2cbaacc65dd5c38ff0c02b032f",
         "26.1": "c75b4e56dd4ceb99851bc15c4a3a6ec2b106b9d6",
         "26.2": "4dad8b69c6240a057575d6bd67b27fab79e364a0",
-        "26.3": "4dad8b69c6240a057575d6bd67b27fab79e364a0"
+        "26.3": "57bec0de4a3a1f2ac07d8e6efbc7ca559a909ab5"
       },
       "surface": "build-toolchain",
       "tests": [
@@ -5233,14 +5233,14 @@
     "neoforge/src/main/resources/META-INF/neoforge.mods.toml": {
       "axes": "Loader/game/version entrypoint identity, declared gametests and packaging metadata.",
       "kind": "adapted",
-      "review": "Implementation candidate; independent final change review must cover residual logic before handoff.",
+      "review": "Minecraft 26.3 NeoForge descriptor reviewed: iconFile replaces the deprecated logoFile surface; dependency ranges remain derived from line pins.",
       "reviewed_blobs": {
         "1.21.1": "e0d13e045517ed9848d2273b447aadb703181c2b",
         "1.21.10": "01894c07684fb4ba920424ac80ea8cb867ea6104",
         "1.21.11": "2e9710f22cbaff5abfe2761d2355c9d0a3f1e7b0",
         "26.1": "c7f4e30ef50cfa1e9f268e7912fa46ab4f553a96",
         "26.2": "25f179e79f17c9679ce386832c849dae90c10ea4",
-        "26.3": "25f179e79f17c9679ce386832c849dae90c10ea4"
+        "26.3": "1c4e13157f05941f81bb54ab1bb2ee1e5b198acf"
       },
       "surface": "loader-entrypoint-metadata",
       "tests": [
