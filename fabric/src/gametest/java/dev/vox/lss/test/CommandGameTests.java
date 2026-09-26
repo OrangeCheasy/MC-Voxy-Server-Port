@@ -94,8 +94,7 @@ public class CommandGameTests {
         var commands = server.getCommands();
         var lines = new ArrayList<String>();
         var stripped = new CommandSourceStack(recorder(lines), Vec3.ZERO, Vec2.ZERO, level,
-                PermissionSet.NO_PERMISSIONS, "lss-test", Component.literal("lss-test"),
-                server, null);
+                PermissionSet.NO_PERMISSIONS, Component.literal("lss-test"), server);
 
         var strippedParse = commands.getDispatcher().parse("lsslod diag", stripped);
         helper.assertTrue(strippedParse.getContext().getNodes().isEmpty(),
@@ -130,8 +129,7 @@ public class CommandGameTests {
         var commands = server.getCommands();
         var lines = new ArrayList<String>();
         var source = new CommandSourceStack(recorder(lines), Vec3.ZERO, Vec2.ZERO, level,
-                PermissionSet.ALL_PERMISSIONS, "lss-test", Component.literal("lss-test"),
-                server, null);
+                PermissionSet.ALL_PERMISSIONS, Component.literal("lss-test"), server);
 
         commands.performPrefixedCommand(source, "lsslod store status");
         helper.assertTrue(anyLineContains(lines, "LOD store: off/unavailable"),
@@ -157,8 +155,7 @@ public class CommandGameTests {
         var commands = server.getCommands();
         var lines = new ArrayList<String>();
         var source = new CommandSourceStack(recorder(lines), Vec3.ZERO, Vec2.ZERO, level,
-                PermissionSet.ALL_PERMISSIONS, "lss-test", Component.literal("lss-test"),
-                server, null);
+                PermissionSet.ALL_PERMISSIONS, Component.literal("lss-test"), server);
 
         commands.performPrefixedCommand(source, "lsslod help");
         helper.assertTrue(anyLineContains(lines, "set <key> <value>"),
@@ -188,8 +185,7 @@ public class CommandGameTests {
         var commands = server.getCommands();
         var lines = new ArrayList<String>();
         var source = new CommandSourceStack(recorder(lines), Vec3.ZERO, Vec2.ZERO, level,
-                PermissionSet.ALL_PERMISSIONS, "lss-test", Component.literal("lss-test"),
-                server, null);
+                PermissionSet.ALL_PERMISSIONS, Component.literal("lss-test"), server);
         var config = dev.vox.lss.config.LSSServerConfig.CONFIG;
         int savedDistance = config.lodDistanceChunks;
         int savedDirty = config.dirtyBroadcastIntervalSeconds;
@@ -243,8 +239,7 @@ public class CommandGameTests {
         int savedDistance = config.lodDistanceChunks;
         var lines = new ArrayList<String>();
         var source = new CommandSourceStack(recorder(lines), Vec3.ZERO, Vec2.ZERO, level,
-                PermissionSet.ALL_PERMISSIONS, "lss-test", Component.literal("lss-test"),
-                server, null);
+                PermissionSet.ALL_PERMISSIONS, Component.literal("lss-test"), server);
         try {
             service.registerPlayer(player, dev.vox.lss.common.LSSConstants.CAPABILITY_VOXEL_COLUMNS);
             int target = savedDistance == 96 ? 128 : 96; // must differ or the re-push is skipped
@@ -278,7 +273,7 @@ public class CommandGameTests {
         var savedOverrides = config.lodDistanceChunksByWorld;
         var lines = new ArrayList<String>();
         var source = new CommandSourceStack(recorder(lines), Vec3.ZERO, Vec2.ZERO, level,
-                PermissionSet.ALL_PERMISSIONS, "lss-test", Component.literal("lss-test"), server, null);
+                PermissionSet.ALL_PERMISSIONS, Component.literal("lss-test"), server);
         String world = level.dimension().identifier().toString();
         var replies = new ArrayList<dev.vox.lss.networking.payloads.SessionConfigS2CPayload>();
         var handshake = new dev.vox.lss.networking.payloads.HandshakeC2SPayload(
