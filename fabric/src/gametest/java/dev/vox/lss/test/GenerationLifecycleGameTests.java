@@ -756,12 +756,13 @@ public class GenerationLifecycleGameTests {
         ServerLevel endLevel = helper.getLevel().getServer().getLevel(Level.END);
         helper.assertTrue(endLevel != null, "the End dimension must exist on the gametest server");
         var dim = LSSConstants.DIM_STR_THE_END;
-        // Void guarantee band (see SerializerParityGameTests): density contributes nothing
-        // between the main island and the outer islands; salted, disjoint from other tests.
+        // Minecraft 26.3 rewrote the End island density functions. Keep this cold-generation
+        // fixture in the remaining central-to-outer-island void gap instead of relying on the
+        // pre-26.3 density formula used by the old test coordinates.
         var origin = chunkAt(helper.absolutePos(BlockPos.ZERO));
         int salt = Math.floorMod(origin.x() * 31 + origin.z(), 64);
-        int cx = 48 + (salt & 7);
-        int cz = 18 + ((salt >> 3) & 7);
+        int cx = 54 + (salt & 3);
+        int cz = 5 + ((salt >> 2) & 3);
         var gen = newGenService(3, 2, 60);
         var filter = new DirtyContentFilter();
         gen.setDirtyContentFilter(filter);
