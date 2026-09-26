@@ -10,7 +10,7 @@
     "java": 25,
     "common_java": 21,
     "mapping": "official",
-    "neoforge_shipping": false,
+    "neoforge_shipping": true,
     "neoforge_renderer": "unsupported",
     "paper_loaders": [
       "paper",
@@ -27,7 +27,7 @@
     "unknown"
   ],
   "notes": [
-    "NeoForge support commitment is best-effort independently of shipping and renderer capability.",
+    "NeoForge 26.3 is validated against the pinned beta toolchain; renderer capability remains independently classified.",
     "Folia remains experimental where present."
   ]
 }
