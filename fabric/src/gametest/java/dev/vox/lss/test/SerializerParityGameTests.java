@@ -3,6 +3,7 @@ package dev.vox.lss.test;
 import dev.vox.lss.common.processing.RequestRegistration;
 
 import static dev.vox.lss.test.TestPositions.chunkAt;
+import static dev.vox.lss.test.TestPositions.clearChunkToAir;
 import static dev.vox.lss.test.TestPositions.holdChunk;
 import static dev.vox.lss.test.TestPositions.releaseChunk;
 
@@ -79,13 +80,11 @@ public class SerializerParityGameTests {
     private static net.minecraft.server.level.ServerPlayer placeMockServerPlayer(GameTestHelper helper) {
         return helper.makeMockServerPlayerInLevel();
     }
-    // End void: between the main island (~chunk 22) and the outer islands (chunk 64+) the island
-    // density function contributes nothing (max |chunk/2 + 12|^2 sum < 4096), so chunks there are
-    // guaranteed all-air in every vanilla seed. The disk-read test may use a fixed position
-    // because it never modifies blocks (the gametest world PERSISTS across runs — block-writing
-    // tests must derive per-run positions instead, see the sentinel test).
-    private static final int END_VOID_DISK_CX = 44;
-    private static final int END_VOID_DISK_CZ = 8;
+    // The 26.3 GameTest universe is superflat-oriented, so a natural End-void coordinate is
+    // not a stable test premise. These coordinates are only disjoint fixture slots; each
+    // all-air test explicitly clears its loaded chunk before asserting serializer behavior.
+    private static final int END_VOID_DISK_CX = 40;
+    private static final int END_VOID_DISK_CZ = 40;
 
     /**
      * R2-5's production range gate feeds {@code level.getMinSectionY()}/{@code getMaxSectionY()}
@@ -510,25 +509,17 @@ public class SerializerParityGameTests {
         helper.assertTrue(endLevel != null, "the End dimension must exist on the gametest server");
         var dim = LSSConstants.DIM_STR_THE_END;
 
-        // This test builds a block, and the gametest world persists across runs — so derive the
-        // chunk from the per-run random batch position (cx 28..43, cz -16..-9: inside the void
-        // guarantee band, disjoint from the disk-read test's chunk) and scan down-z past any
-        // column a previous run already built in.
+        // Use a disjoint, per-run fixture slot and explicitly clear it. The property under
+        // test is the ALL_AIR sentinel, not vanilla End terrain placement.
         var origin = chunkAt(helper.absolutePos(BlockPos.ZERO));
-        int salt = Math.floorMod(origin.x() * 31 + origin.z(), 256);
-        int cx = 28 + (salt & 15);
-        int baseCz = -16 + ((salt >> 4) & 7);
-        int cz = baseCz;
+        int salt = Math.floorMod(origin.x() * 31 + origin.z(), 64);
+        int cx = 56 + (salt & 7);
+        int cz = 40 + ((salt >> 3) & 7);
         var chunk = endLevel.getChunk(cx, cz);
-        for (int remaining = 8; remaining > 0
-                && SectionSerializer.serializeColumn(endLevel, chunk, cx, cz).serializedSections() != null;
-                remaining--) {
-            cz--;
-            chunk = endLevel.getChunk(cx, cz);
-        }
+        clearChunkToAir(chunk);
         var live = SectionSerializer.serializeColumn(endLevel, chunk, cx, cz);
         helper.assertTrue(live.serializedSections() == null,
-                "premise: no all-air End void column found near chunk (" + cx + ", " + baseCz + ")");
+                "premise: controlled End fixture must serialize as all-air");
 
         var filter = new DirtyContentFilter();
         helper.assertTrue(filter.contentChanged(endLevel, chunk, dim),
@@ -568,10 +559,11 @@ public class SerializerParityGameTests {
         int cz = END_VOID_DISK_CZ;
 
         var chunk = endLevel.getChunk(cx, cz);
+        clearChunkToAir(chunk);
         helper.assertTrue(
                 SectionSerializer.serializeColumn(endLevel, chunk, cx, cz).serializedSections() == null,
-                "premise: the End void chunk serializes as all-air");
-        // Flush the freshly generated chunk to its region file so the read below hits real disk state.
+                "premise: controlled End fixture serializes as all-air");
+        // Flush the controlled all-air chunk to its region file so the read below hits real disk state.
         endLevel.save(null, true, false);
 
         var reader = new ChunkDiskReader(1, false);
@@ -805,15 +797,10 @@ public class SerializerParityGameTests {
                     state.flushSendQueue(1_073_741_824L, limiter, flushDiag, p -> {});
                     helper.assertTrue(state.getTotalSectionsSent() == 1,
                             "waiting for the built column to serve and flush");
-                    // The column becomes all-air: strip every superflat layer.
-                    for (int x = 0; x < 16; x++) {
-                        for (int z = 0; z < 16; z++) {
-                            for (int y = -64; y <= -61; y++) {
-                                level.setBlock(new BlockPos(cx * 16 + x, y, cz * 16 + z),
-                                        Blocks.AIR.defaultBlockState(), 3);
-                            }
-                        }
-                    }
+                    // The column becomes all-air. Do not encode the flat preset's layer
+                    // coordinates here: 26.3 changed worldgen internals, and this regression test
+                    // is about the LSS transition semantics, not the fixture preset's exact shape.
+                    clearColumnToAir(level, cx, cz);
                     // Queue the completed mutation's invalidation before capturing a fresh probe.
                     proc.invalidateTimestamps(dim, new long[]{packed});
                     proc.clearDiskReadDone(uuid, new long[]{packed});
@@ -861,6 +848,33 @@ public class SerializerParityGameTests {
                 default -> helper.fail("unexpected all-air transition step " + step.get());
             }
         });
+    }
+
+    /**
+     * Clear every real block currently present in a loaded fixture column while preserving the
+     * normal Level#setBlock update path. This keeps all-air transition tests independent of the
+     * exact flat-world layer layout and of any structure content that happens to occupy the
+     * chosen chunk.
+     */
+    private static void clearColumnToAir(ServerLevel level, int cx, int cz) {
+        var chunk = level.getChunk(cx, cz);
+        var sections = chunk.getSections();
+        int minSectionY = level.getMinSectionY();
+        for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+            var section = sections[sectionIndex];
+            if (section == null || section.hasOnlyAir()) continue;
+            int baseY = (minSectionY + sectionIndex) << 4;
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        if (!section.getBlockState(x, y, z).isAir()) {
+                            level.setBlock(new BlockPos(cx * 16 + x, baseY + y, cz * 16 + z),
+                                    Blocks.AIR.defaultBlockState(), 3);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static String describeMismatch(byte[] disk, byte[] live) {
