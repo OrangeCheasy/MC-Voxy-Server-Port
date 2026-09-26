@@ -20,6 +20,10 @@
     "26.2": {
       "schema_version": 1,
       "commit": "6a88cf3e78a2e0855947eef6ae26569f03efa25e"
+    },
+    "26.3": {
+      "schema_version": 1,
+      "commit": "23a57774ee03de33204b462c39bc48954453bb67"
     }
   },
   "repository": "https://github.com/VoX/lod-server-support.git"
