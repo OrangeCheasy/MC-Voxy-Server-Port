@@ -1542,7 +1542,7 @@
         "1.21.11": "5cd128c0460f6d05a2beb308a9afd7ef1d16b9c6",
         "26.1": "6215686bdd540b1e46d8ee01a0cca5c2d6070e56",
         "26.2": "a568b6cc882cf3716ffd2396e2cac5db8833c094",
-        "26.3": "a568b6cc882cf3716ffd2396e2cac5db8833c094"
+        "26.3": "3e8c41d45e197eeb87e5c10d91d3dd418aba031a"
       },
       "surface": "line-adaptation:fabric/src/gametest/java/dev/vox/lss/test/GenerationLifecycleGameTests.java",
       "tests": [
@@ -1661,7 +1661,7 @@
         "1.21.11": "f9bfef5a9009b6b38356f0bd0488fafe1703f39d",
         "26.1": "2e19af95844cf7c719a9d01c31f395f1e69329e5",
         "26.2": "56f094bb05260a5caadb563b5b5a5bbd51fb928d",
-        "26.3": "56f094bb05260a5caadb563b5b5a5bbd51fb928d"
+        "26.3": "f7089598aaa15989c1479b5e8d206558063359fa"
       },
       "surface": "line-adaptation:fabric/src/gametest/java/dev/vox/lss/test/SerializerParityGameTests.java",
       "tests": [
