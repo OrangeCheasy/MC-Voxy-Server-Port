@@ -135,6 +135,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      # Four shipped jars: the LSS pair and the branded Voxy Server Side pair (produced by the
+      # vssJar repackage tasks — Fabric's runs as a `build` dependency, Paper's as a shadowJar
+      # finalizer). Explicit per-brand globs so each artifact holds only its own jar.
       - uses: actions/upload-artifact@v5
         with:
           name: lod-server-support-fabric
@@ -167,12 +170,17 @@ jobs:
           name: voxy-server-side-neoforge
           path: neoforge/build/libs/voxy-server-side-neoforge*.jar
 
+  # Tier 3: the only end-to-end pins for the client-server flow, LSSApi consumer
+  # dispatch, the ingest-failure recovery loop, and the IntegratedServerLanHook path.
+  # Runs headless via llvmpipe (same env the original Tier-3 job used on these runners).
   client-gametest:
     name: Client GameTests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
+      # Line identity comes from .github/line.env (R2-2 — build.yml used to hardcode
+      # the Java version and went red-by-construction on the Java-21 line).
       - name: Source line env
         run: grep -vE '^\s*(#|$)' .github/line.env >> "$GITHUB_ENV"
 
@@ -189,6 +197,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
+      # Retry-once for the same reason as Tier 2 above — this tier additionally sees the
+      # vanilla 26.2 TicketStorage purge crash under ticket churn (CLAUDE.md flake catalog).
       - name: Tier 3 client gametests (retry once on flake)
         run: |
           ./gradlew :fabric:runClientGameTest || {
