@@ -3,6 +3,7 @@ package dev.vox.lss.test;
 import dev.vox.lss.common.processing.RequestRegistration;
 
 import static dev.vox.lss.test.TestPositions.chunkAt;
+import static dev.vox.lss.test.TestPositions.clearChunkToAir;
 import static dev.vox.lss.test.TestPositions.holdChunk;
 import static dev.vox.lss.test.TestPositions.releaseChunk;
 
@@ -79,15 +80,11 @@ public class SerializerParityGameTests {
     private static net.minecraft.server.level.ServerPlayer placeMockServerPlayer(GameTestHelper helper) {
         return helper.makeMockServerPlayerInLevel();
     }
-    // Minecraft 26.3 moved the main-island contribution out of end_outer_islands and into
-    // the data-driven end/islands density function. The pre-26.3 (~chunk 22) guarantee used by
-    // these tests is therefore obsolete. Keep fixtures in the remaining vanilla void gap:
-    // comfortably outside the new central-island contribution, but inside the outer-island
-    // band that begins around 1000 blocks from the origin. The disk-read test may use a fixed
-    // position because it never modifies blocks (the gametest world PERSISTS across runs —
-    // block-writing tests must derive per-run positions instead, see the sentinel test).
-    private static final int END_VOID_DISK_CX = 56;
-    private static final int END_VOID_DISK_CZ = 0;
+    // The 26.3 GameTest universe is superflat-oriented, so a natural End-void coordinate is
+    // not a stable test premise. These coordinates are only disjoint fixture slots; each
+    // all-air test explicitly clears its loaded chunk before asserting serializer behavior.
+    private static final int END_VOID_DISK_CX = 40;
+    private static final int END_VOID_DISK_CZ = 40;
 
     /**
      * R2-5's production range gate feeds {@code level.getMinSectionY()}/{@code getMaxSectionY()}
@@ -512,25 +509,17 @@ public class SerializerParityGameTests {
         helper.assertTrue(endLevel != null, "the End dimension must exist on the gametest server");
         var dim = LSSConstants.DIM_STR_THE_END;
 
-        // This test builds a block, and the gametest world persists across runs — derive the
-        // chunk from the per-run random batch position. Minecraft 26.3's rewritten End density
-        // moved the old void boundary, so stay in the new central-to-outer-island gap and scan
-        // down-z past any column a previous run already built in.
+        // Use a disjoint, per-run fixture slot and explicitly clear it. The property under
+        // test is the ALL_AIR sentinel, not vanilla End terrain placement.
         var origin = chunkAt(helper.absolutePos(BlockPos.ZERO));
-        int salt = Math.floorMod(origin.x() * 31 + origin.z(), 256);
-        int cx = 52 + (salt & 7);
-        int baseCz = -4 + ((salt >> 4) & 7);
-        int cz = baseCz;
+        int salt = Math.floorMod(origin.x() * 31 + origin.z(), 64);
+        int cx = 56 + (salt & 7);
+        int cz = 40 + ((salt >> 3) & 7);
         var chunk = endLevel.getChunk(cx, cz);
-        for (int remaining = 8; remaining > 0
-                && SectionSerializer.serializeColumn(endLevel, chunk, cx, cz).serializedSections() != null;
-                remaining--) {
-            cz--;
-            chunk = endLevel.getChunk(cx, cz);
-        }
+        clearChunkToAir(chunk);
         var live = SectionSerializer.serializeColumn(endLevel, chunk, cx, cz);
         helper.assertTrue(live.serializedSections() == null,
-                "premise: no all-air End void column found near chunk (" + cx + ", " + baseCz + ")");
+                "premise: controlled End fixture must serialize as all-air");
 
         var filter = new DirtyContentFilter();
         helper.assertTrue(filter.contentChanged(endLevel, chunk, dim),
@@ -570,10 +559,11 @@ public class SerializerParityGameTests {
         int cz = END_VOID_DISK_CZ;
 
         var chunk = endLevel.getChunk(cx, cz);
+        clearChunkToAir(chunk);
         helper.assertTrue(
                 SectionSerializer.serializeColumn(endLevel, chunk, cx, cz).serializedSections() == null,
-                "premise: the End void chunk serializes as all-air");
-        // Flush the freshly generated chunk to its region file so the read below hits real disk state.
+                "premise: controlled End fixture serializes as all-air");
+        // Flush the controlled all-air chunk to its region file so the read below hits real disk state.
         endLevel.save(null, true, false);
 
         var reader = new ChunkDiskReader(1, false);

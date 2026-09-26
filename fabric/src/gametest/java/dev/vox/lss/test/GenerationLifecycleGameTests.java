@@ -3,6 +3,7 @@ package dev.vox.lss.test;
 import dev.vox.lss.common.processing.RequestRegistration;
 
 import static dev.vox.lss.test.TestPositions.chunkAt;
+import static dev.vox.lss.test.TestPositions.clearChunkToAir;
 
 import dev.vox.lss.common.LSSConstants;
 import dev.vox.lss.common.PositionUtil;
@@ -12,6 +13,7 @@ import dev.vox.lss.networking.server.ChunkGenerationService;
 import dev.vox.lss.networking.server.DirtyContentFilter;
 import dev.vox.lss.networking.server.LSSServerNetworking;
 import dev.vox.lss.networking.server.RequestProcessingService;
+import dev.vox.lss.networking.server.SectionSerializer;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -756,13 +758,18 @@ public class GenerationLifecycleGameTests {
         ServerLevel endLevel = helper.getLevel().getServer().getLevel(Level.END);
         helper.assertTrue(endLevel != null, "the End dimension must exist on the gametest server");
         var dim = LSSConstants.DIM_STR_THE_END;
-        // Minecraft 26.3 rewrote the End island density functions. Keep this cold-generation
-        // fixture in the remaining central-to-outer-island void gap instead of relying on the
-        // pre-26.3 density formula used by the old test coordinates.
+        // The modern GameTest universe is superflat-oriented, so manufacture the all-air
+        // input explicitly. Other tests in this class already pin cold-generation ticket
+        // behavior; this one is specifically the completion-time ALL_AIR seed call-site.
         var origin = chunkAt(helper.absolutePos(BlockPos.ZERO));
         int salt = Math.floorMod(origin.x() * 31 + origin.z(), 64);
-        int cx = 54 + (salt & 3);
-        int cz = 5 + ((salt >> 2) & 3);
+        int cx = 72 + (salt & 7);
+        int cz = 40 + ((salt >> 3) & 7);
+        var fixtureChunk = endLevel.getChunk(cx, cz);
+        clearChunkToAir(fixtureChunk);
+        helper.assertTrue(
+                SectionSerializer.serializeColumn(endLevel, fixtureChunk, cx, cz).serializedSections() == null,
+                "premise: controlled End fixture must serialize as all-air");
         var gen = newGenService(3, 2, 60);
         var filter = new DirtyContentFilter();
         gen.setDirtyContentFilter(filter);
