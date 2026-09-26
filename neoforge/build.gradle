@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'net.neoforged.moddev' version '2.0.144'
+    id 'net.neoforged.moddev' version '2.0.147'
     id 'com.gradleup.shadow' version '9.4.2'
 }
 
@@ -178,7 +178,7 @@ processResources {
     filesMatching('META-INF/neoforge.mods.toml') {
         expand props
     }
-    // The mods-screen icon (logoFile in the TOML): derived from the fabric module's
+    // The mods-screen icon (iconFile in the TOML): derived from the fabric module's
     // copy so git keeps a single source — the fabric/neoforge mod lists match.
     from(rootProject.file('fabric/src/main/resources/assets/lss/icon.png')) {
         into 'assets/lss'
@@ -359,8 +359,8 @@ tasks.register('vssJar') {
                                 .replaceFirst(/(?m)^displayName=.*$/,
                                         'displayName="Voxy Server Side"')
                                 .replaceFirst(/(?m)^authors=.*$/, 'authors="Xantha, VoX"')
-                                .replaceFirst(/(?m)^logoFile=.*$/,
-                                        'logoFile="assets/lss/icon-vss.png"')
+                                .replaceFirst(/(?m)^iconFile=.*$/,
+                                        'iconFile="assets/lss/icon-vss.png"')
                                 .replaceFirst(/(?m)^issueTrackerURL=.*$/,
                                         'issueTrackerURL="https://modrinth.com/plugin/voxy-server-side"')
                                 .replaceFirst(/(?m)^description=.*$/,
