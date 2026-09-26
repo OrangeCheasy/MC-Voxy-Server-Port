@@ -9,13 +9,13 @@ from lines import check
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--fetch',action='store_true');p.add_argument('--report',type=Path,default=Path('compatibility-candidate-report.json'));a=p.parse_args()
  try:
-  sources=load(ROOT/'config/compatibility/source-refs.json')['sources']
+  snapshot=load(ROOT/'config/compatibility/source-refs.json');sources=snapshot['sources'];source_repository=snapshot.get('repository','origin')
   for source in sources.values():
    ref=source['commit']
    exists=subprocess.run(['git','-C',str(ROOT),'cat-file','-e',ref+'^{commit}'],stderr=subprocess.DEVNULL).returncode==0
    if not exists:
     require(a.fetch,'missing exact source object '+ref+'; fetch explicitly')
-    subprocess.run(['git','-C',str(ROOT),'fetch','--no-tags','origin',ref],check=True)
+    subprocess.run(['git','-C',str(ROOT),'fetch','--no-tags',source_repository,ref],check=True)
   validate(ROOT);render(ROOT,True)
   refs={line:value['commit'] for line,value in sources.items()}
   candidate=git(ROOT,'rev-parse','HEAD').strip();line=load(ROOT/'config/compatibility/line.json')['facts']['line'];refs[line]=candidate
