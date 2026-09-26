@@ -4,6 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
  * The gametests' line-neutral chunk-position surface (V-3/T2,
@@ -55,6 +57,33 @@ final class TestPositions {
     /** Release the {@link #holdChunk} ticket. */
     static void releaseChunk(ServerChunkCache chunkSource, ChunkAt at) {
         chunkSource.removeTicketWithRadius(TicketType.PLAYER_LOADING, at.pos(), 0);
+    }
+
+    /**
+     * Turn a loaded chunk into a deterministic all-air GameTest fixture without depending
+     * on the test server's dimension generator. Minecraft's modern GameTest universe is
+     * superflat-oriented, so assuming that a vanilla End coordinate is naturally empty is
+     * no longer a stable premise across support lines.
+     *
+     * <p>Mutating the section containers directly keeps the fixture cheap (flat terrain is
+     * only a few layers) and avoids thousands of neighbor updates. The tests using this
+     * helper only care about LSS section serialization; they do not rely on heightmaps.
+     */
+    static void clearChunkToAir(LevelChunk chunk) {
+        for (var section : chunk.getSections()) {
+            if (section == null || section.hasOnlyAir()) continue;
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        if (!section.getBlockState(x, y, z).isAir()) {
+                            section.setBlockState(x, y, z, Blocks.AIR.defaultBlockState(), false);
+                        }
+                    }
+                }
+            }
+            section.recalcBlockCounts();
+        }
+        chunk.markUnsaved();
     }
 
     private static ChunkAt of(ChunkPos p) {
